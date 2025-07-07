@@ -1,0 +1,78 @@
+@startuml
+title Standart Container Diagram
+
+top to bottom direction
+
+!includeurl https://raw.githubusercontent.com/RicardoNiepel/C4-PlantUML/master/C4_Container.puml
+
+Person(client, "Client", "Bank client")
+Person(front_office, "Front office", "Front office employee")
+Person(back_office_deposit, "Back office (deposit)", "Back office employee (deposit department)")
+Person(back_office_credit, "Back office (credit)", "Back office employee (credit department)")
+
+System(message_queue, "Message Queue", "Message Queue to async communication systems")
+System(sms_gate, "SMS Gateway", "Gateway to a telecom operator for sending SMS")
+System(web_site, "Bank web site", "Bank's information website")
+
+System_Ext(telecom_operator, "Telecom operator", "Telecom operator's system")
+System_Ext(yandex_load_balancer, "Anycast + BGP balancer")
+
+System_Boundary(internet_bank_DC1, "Internet bank Data Center 1") {
+Container(ib_api_gateway1, "API Gateway", "Spring Cloud Gateway", "Entry point for all client requests, routes to services, decryptions https, supports user session")
+Container(ib_deposit_microservice1, "Deposit microservice", "Spring Boot", "Handles deposits processing")
+Container(ib_monolith1, "Internet bank monolith", ".NET Framework 4.5", "Handles users, auth, preferences, credits")
+ContainerDb(ib_postgres1, "PostgreSQL", "Relational Database", "Stores structured deposits data")
+ContainerDb(ib_monolith_DBMS1, "MS SQL", "Relational Database", "Stores structured deposits data")
+
+Rel(ib_api_gateway1, ib_deposit_microservice1, "Forwards request", "REST/HTTPS")
+Rel(ib_api_gateway1, ib_monolith1, "Forwards request")
+Rel(ib_deposit_microservice1, ib_postgres1, "Reads/Writes", "JDBC")
+Rel(ib_monolith1, ib_monolith_DBMS1, "Reads/Writes", "ADO.NET")
+}
+
+System_Boundary(internet_bank_DC2, "Internet bank Data Center 2") {
+Container(ib_api_gateway2, "API Gateway", "Spring Cloud Gateway", "Entry point for all client requests, routes to services, decryptions https, supports user session")
+Container(ib_deposit_microservice2, "Deposit microservice", "Spring Boot", "Handles deposits processing")
+Container(ib_monolith2, "Internet bank monolith", ".NET Framework 4.5", "Handles users, auth, preferences, credits")
+ContainerDb(ib_postgres2, "PostgreSQL", "Relational Database", "Stores structured deposits data")
+ContainerDb(ib_monolith_DBMS2, "MS SQL", "Relational Database", "Stores structured deposits data")
+
+Rel(ib_api_gateway2, ib_deposit_microservice2, "Forwards request", "REST/HTTPS")
+Rel(ib_api_gateway2, ib_monolith2, "Forwards request")
+Rel(ib_deposit_microservice2, ib_postgres2, "Reads/Writes", "JDBC")
+Rel(ib_monolith2, ib_monolith_DBMS2, "Reads/Writes", "ADO.NET")
+}
+
+System_Boundary(ABS, "Automated Banking System") {
+Container(abs_monolith, "Automated Banking System Application", "Delphi", "System automating bank's back office processes")
+ContainerDb(abs_oracle, "Oracle DB", "Relational Database", "Stores structured data")
+
+Rel(abs_monolith, abs_oracle, "Reads/Writes", "PL/SQL")
+}
+
+Rel(client, web_site, "Requests deposit", "HTTPS")
+Rel(client, yandex_load_balancer, "Fills out the deposit form", "HTTPS")
+Rel(yandex_load_balancer, ib_api_gateway1, "Fills out the deposit form", "HTTPS")
+Rel(yandex_load_balancer, ib_api_gateway2, "Fills out the deposit form", "HTTPS")
+Rel(back_office_deposit, abs_monolith, "Uses")
+Rel(back_office_credit, abs_monolith, "Uses")
+Rel(front_office, abs_monolith, "Uses")
+
+Rel(sms_gate, telecom_operator, "Sends info via telecom operator's system")
+Rel(telecom_operator, client, "Delivers SMS", "SMS")
+Rel(ib_monolith1, message_queue, "Pub/Sub", "Kafka Wire Protocol")
+Rel(ib_monolith1, abs_oracle, "Reads/Writes", "PL/SQL")
+Rel(ib_monolith1, sms_gate, "Sends message", "API")
+Rel(ib_monolith2, message_queue, "Pub/Sub", "Kafka Wire Protocol")
+Rel(ib_monolith2, abs_oracle, "Reads/Writes", "PL/SQL")
+Rel(ib_monolith2, sms_gate, "Sends message", "API")
+Rel(ib_postgres1, ib_postgres2, "Replication")
+Rel(ib_postgres2, ib_postgres1, "Replication")
+Rel(ib_monolith_DBMS1, ib_monolith_DBMS2, "Replication")
+Rel(ib_monolith_DBMS2, ib_monolith_DBMS1, "Replication")
+Rel(web_site, message_queue, "Pub", "Kafka Wire Protocol")
+Rel(ib_deposit_microservice1, message_queue, "Pub/Sub", "Kafka Wire Protocol")
+Rel(ib_deposit_microservice2, message_queue, "Pub/Sub", "Kafka Wire Protocol")
+Rel(abs_monolith, message_queue, "Pub/Sub", "Kafka Wire Protocol")
+
+@enduml
