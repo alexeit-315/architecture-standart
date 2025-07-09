@@ -1,0 +1,45 @@
+@startuml
+title Standart Context Diagram
+
+top to bottom direction
+
+!includeurl https://raw.githubusercontent.com/RicardoNiepel/C4-PlantUML/master/C4_Component.puml
+
+
+Person(client, "Client", "Bank client")
+Person(ext_call_center, "External call center", "External call center employee")
+Person(int_call_center, "Internal call center", "Internal call center employee")
+Person(front_office, "Front office", "Front office employee")
+Person(back_office_deposit, "Back office (deposit)", "Back office employee (deposit department)")
+Person(back_office_credit, "Back office (credit)", "Back office employee (credit department)")
+
+System(internet_bank, "Internet bank", "System managing client access to bank's services")
+System(ABS, "Automated Banking System", "System automating bank's back office processes")
+System(ext_call_system, "External call center system", "System managing external call center processes")
+System(int_call_system, "Internal call center system", "System managing internal call center processes")
+System(sms_gate, "SMS Gateway", "Gateway to a telecom operator for sending SMS")
+System(web_site, "Bank web site", "Bank's information website")
+System(message_queue, "Message Queue", "Kafka")
+
+System_Ext(telecom_operator, "Telecom operator", "Telecom operator system")
+
+Rel(client, web_site, "Requests deposit")
+Rel(client, internet_bank, "Fills out the deposit form")
+Rel(internet_bank, ABS, "Sends deposit request")
+Rel(back_office_deposit, ABS, "Defines deposit rate, confirms deposit agreement")
+Rel(back_office_credit, ABS, "Adds risk value")
+Rel(front_office, ABS, "Add new client, sends deposit request")
+Rel(ABS, sms_gate, "Sends information via SMS")
+Rel(ABS, ext_call_center, "Sends deposit rate via file share")
+Rel(ext_call_center, ext_call_system, "Gets deposit rate")
+Rel(int_call_center, int_call_system, "Gets deposit rate, gets deposit proposal")
+Rel(int_call_system, message_queue, "Gets deposit rate, gets deposit proposal")
+Rel(web_site, message_queue, "Sends deposit form")
+Rel(internet_bank, message_queue, "Sends deposit request")
+Rel(ABS, message_queue, "Sends deposit request, ends deposit request")
+
+
+Rel(sms_gate, telecom_operator, "Sends SMS via telecom operator's system")
+Rel(telecom_operator, client, "Delivers SMS")
+
+@enduml
