@@ -25,7 +25,6 @@ System_Ext(telecom_operator, "Telecom operator", "Telecom operator system")
 
 Rel(client, web_site, "Requests deposit")
 Rel(client, internet_bank, "Fills out the deposit form")
-Rel(web_site, ABS, "Sends deposit form")
 Rel(internet_bank, ABS, "Sends deposit request")
 Rel(back_office_deposit, ABS, "Defines deposit rate, confirms deposit agreement")
 Rel(back_office_credit, ABS, "Adds risk value")
